@@ -4,4 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "awscli",
+    "ruff>=0.15.16",
+]
+
+[tool.uv.sources]
+awscli = { git = "https://github.com/aws/aws-cli", rev = "v2" }
