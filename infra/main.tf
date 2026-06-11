@@ -33,3 +33,12 @@ module "msk" {
   security_group_ids = [module.networking.msk_security_group_id]
   common_tags        = local.common_tags
 }
+module "iam" {
+  source = "./modules/iam"
+
+  project_name    = var.project_name
+  environment     = var.environment
+  msk_cluster_arn = module.msk.cluster_arn
+  common_tags     = local.common_tags
+}
+
