@@ -4,6 +4,6 @@ output "cluster_arn" {
 }
 
 output "bootstrap_brokers" {
-  description = "MSK Serverless bootstrap broker endpoint"
-  value       = aws_msk_serverless_cluster.main.cluster_name
+  description = "MSK Serverless bootstrap broker endpoint (IAM/SASL)"
+  value       = aws_msk_serverless_cluster.main.bootstrap_brokers_sasl_iam
 }
