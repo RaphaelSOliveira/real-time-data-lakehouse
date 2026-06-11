@@ -23,3 +23,13 @@ module "networking" {
   public_subnet_cidrs = var.public_subnet_cidrs
   common_tags         = local.common_tags
 }
+
+module "msk" {
+  source = "./modules/msk"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  subnet_ids         = module.networking.public_subnet_ids
+  security_group_ids = [module.networking.msk_security_group_id]
+  common_tags        = local.common_tags
+}
