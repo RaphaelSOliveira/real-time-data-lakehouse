@@ -33,6 +33,7 @@ module "msk" {
   security_group_ids = [module.networking.msk_security_group_id]
   common_tags        = local.common_tags
 }
+
 module "iam" {
   source = "./modules/iam"
 
@@ -42,3 +43,13 @@ module "iam" {
   common_tags     = local.common_tags
 }
 
+module "ec2" {
+  source = "./modules/ec2"
+
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_id                = module.networking.vpc_id
+  subnet_id             = module.networking.public_subnet_ids[0]
+  instance_profile_name = module.iam.ec2_instance_profile_name
+  common_tags           = local.common_tags
+}
