@@ -70,9 +70,12 @@ resource "aws_instance" "kafka_client" {
 
   user_data = <<-EOF
     #!/bin/bash
+    
+    # Configure logs to capture user-data output
     set -e
     exec > /var/log/user-data.log 2>&1
 
+    # Install Java, Kafka, and Python packages
     yum update -y
     yum install -y wget java-17-amazon-corretto-headless python3-pip
 
@@ -87,6 +90,7 @@ resource "aws_instance" "kafka_client" {
     wget -q https://github.com/aws/aws-msk-iam-auth/releases/download/v2.3.7/aws-msk-iam-auth-2.3.7-all.jar \
       -O /opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar
 
+    # Create client.properties file for IAM authentication
     echo "security.protocol=SASL_SSL" > /opt/kafka/bin/client.properties
     echo "sasl.mechanism=AWS_MSK_IAM" >> /opt/kafka/bin/client.properties
     echo "sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;" >> /opt/kafka/bin/client.properties
@@ -97,7 +101,10 @@ resource "aws_instance" "kafka_client" {
 
     pip install kafka-python aws-msk-iam-sasl-signer-python
 
+    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic first_topic --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server boot-upxg5zpo.c2.kafka-serverless.us-east-2.amazonaws.com:9098
+    
     echo "user-data completed successfully"
+
   EOF
 
   tags = merge(var.common_tags, {
