@@ -40,7 +40,10 @@ resource "aws_iam_role_policy" "ec2_msk" {
       ]
       Resource = [
         var.msk_cluster_arn,
-        "${var.msk_cluster_arn}/*"
+        replace(var.msk_cluster_arn, ":cluster/", ":topic/"),
+        "${replace(var.msk_cluster_arn, ":cluster/", ":topic/")}/*",
+        replace(var.msk_cluster_arn, ":cluster/", ":group/"),
+        "${replace(var.msk_cluster_arn, ":cluster/", ":group/")}/*"
       ]
     }]
   })
