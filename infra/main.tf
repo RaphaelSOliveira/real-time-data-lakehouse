@@ -51,5 +51,6 @@ module "ec2" {
   vpc_id                = module.networking.vpc_id
   subnet_id             = module.networking.public_subnet_ids[0]
   instance_profile_name = module.iam.ec2_instance_profile_name
+  msk_bootstrap_servers = module.msk.bootstrap_brokers
   common_tags           = local.common_tags
 }

@@ -33,6 +33,11 @@ variable "instance_type" {
   default     = "t3.micro"
 }
 
+variable "msk_bootstrap_servers" {
+  description = "MSK Serverless bootstrap broker endpoint (IAM/SASL)"
+  type        = string
+}
+
 variable "common_tags" {
   type    = map(string)
   default = {}

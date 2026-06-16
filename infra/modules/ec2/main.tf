@@ -101,7 +101,7 @@ resource "aws_instance" "kafka_client" {
 
     pip install kafka-python aws-msk-iam-sasl-signer-python
 
-    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic first_topic --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server boot-upxg5zpo.c2.kafka-serverless.us-east-2.amazonaws.com:9098
+    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic first_topic --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${var.msk_bootstrap_servers}
     
     echo "user-data completed successfully"
 
