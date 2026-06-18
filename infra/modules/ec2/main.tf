@@ -2,6 +2,9 @@ locals {
   prefix = "${var.project_name}-${var.environment}"
 }
 
+# Current AWS region (used to set AWS_REGION for the Python producer)
+data "aws_region" "current" {}
+
 # Latest Amazon Linux 2023 AMI
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
@@ -103,6 +106,10 @@ resource "aws_instance" "kafka_client" {
 
     /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic first_topic --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${var.msk_bootstrap_servers}
     
+    # Expose env vars system-wide so the Python producer can read them in later sessions
+    echo 'KAFKA_BOOTSTRAP_SERVERS=${var.msk_bootstrap_servers}' >> /etc/environment
+    echo 'AWS_REGION=${data.aws_region.current.name}' >> /etc/environment
+
     echo "user-data completed successfully"
 
   EOF
