@@ -2,13 +2,12 @@ import json
 import logging
 import os
 import random
-import sys
 import time
 from datetime import datetime, timezone
 
 from kafka import KafkaProducer
 from kafka.errors import KafkaError, KafkaTimeoutError
-from kafka.sasl.oauth import AbstractTokenProvider
+from kafka.net.sasl.oauth import AbstractTokenProvider
 from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
 logging.basicConfig(
@@ -28,7 +27,7 @@ SEND_INTERVAL_SECONDS = float(os.environ.get('SEND_INTERVAL_SECONDS', '1'))
 
 
 class MSKTokenProvider(AbstractTokenProvider):
-    def generate_token(self):
+    def token(self):
         token, _ = MSKAuthTokenProvider.generate_auth_token(AWS_REGION)
         return token
 
