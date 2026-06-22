@@ -8,7 +8,7 @@ from kafka import KafkaProducer
 from kafka.sasl.oauth import AbstractTokenProvider
 from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
-TOPIC_NAME = 'realtimeridedata'
+TOPIC_NAME = 'realtimeriskopsdata'
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
 BROKERS = os.environ.get('ho', '').split(',')
 
@@ -32,23 +32,42 @@ producer = KafkaProducer(
 )
 
 
-city = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
-payment_types = ['Credit card', 'Cash', 'No charge', 'Dispute', 'Unknown']
-rate_codes = ['Standard', 'JFK', 'Newark', 'Nassau/Westchester', 'Negotiated', 'Group ride']
-trip_types = ['Street-hail', 'Dispatch']
+transaction_types = ['Wire transfer', 'ACH', 'Card payment', 'ATM withdrawal', 'Loan disbursement']
+channels = ['Online banking', 'Mobile app', 'Branch', 'ATM', 'Call center']
+currencies = ['USD', 'EUR', 'GBP', 'BRL', 'JPY']
+countries = ['US', 'GB', 'DE', 'BR', 'JP', 'NG', 'RU', 'CN']
+risk_categories = ['Credit', 'Market', 'Operational', 'Liquidity', 'Compliance']
+account_types = ['Checking', 'Savings', 'Credit', 'Investment', 'Corporate']
 
-def generate_ride_event():
+high_risk_countries = {'NG', 'RU', 'CN'}
+
+def is_flagged(amount, risk_score, origin_country, destination_country):
+    return (
+        risk_score > 80
+        or amount > 200000
+        or origin_country in high_risk_countries
+        or destination_country in high_risk_countries
+    )
+
+def generate_riskops_event():
+    amount = round(random.uniform(10, 250000), 2)
+    risk_score = round(random.uniform(0, 100), 2)
+    origin_country = random.choice(countries)
+    destination_country = random.choice(countries)
     return {
-        'ride_id': random.randint(1, 100000),
-        'rider_id': random.randint(1, 5000),
-        'driver_id': random.randint(1, 2000),
-        'fare': round(random.uniform(5, 75), 2),
-        'distance_km': round(random.uniform(0.5, 40), 2),
-        
-        'pick_up_city': random.choice([city]),
-        'rate_code': random.choice([rate_codes]),
-        'trip_types': random.choice([trip_types]),
-        'payment_type': random.choice([payment_types]),
+        'transaction_id': random.randint(1, 1000000),
+        'account_id': random.randint(1, 50000),
+        'customer_id': random.randint(1, 20000),
+        'amount': amount,
+        'currency': random.choice(currencies),
+        'transaction_type': random.choice(transaction_types),
+        'channel': random.choice(channels),
+        'account_type': random.choice(account_types),
+        'origin_country': origin_country,
+        'destination_country': destination_country,
+        'risk_category': random.choice(risk_categories),
+        'risk_score': risk_score,
+        'is_flagged': is_flagged(amount, risk_score, origin_country, destination_country),
         'event_time': datetime.utcnow().isoformat(),
     }
 
@@ -62,7 +81,7 @@ if __name__ == '__main__':
 
     try:
         while True:
-            event = generate_ride_event()
+            event = generate_riskops_event()
             producer.send(TOPIC_NAME, value=event)
             print(f'Sent: {event}')
             time.sleep(1)
