@@ -10,7 +10,7 @@ from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
 TOPIC_NAME = 'realtimeriskopsdata'
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
-BROKERS = os.environ.get('ho', '').split(',')
+BROKERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', '').split(',')
 
 
 class MSKTokenProvider(AbstractTokenProvider):
