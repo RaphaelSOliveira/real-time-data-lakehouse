@@ -104,9 +104,10 @@ resource "aws_instance" "kafka_client" {
 
     pip install kafka-python aws-msk-iam-sasl-signer-python
 
-    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic transaction_topic --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${var.msk_bootstrap_servers}
+    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic riskops_transaction --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${var.msk_bootstrap_servers}
     
     # Expose env vars system-wide so the Python producer can read them in later sessions
+    echo 'TOPIC_NAME=riskops_transaction' >> /etc/environment
     echo 'KAFKA_BOOTSTRAP_SERVERS=${var.msk_bootstrap_servers}' >> /etc/environment
     echo 'AWS_REGION=${data.aws_region.current.name}' >> /etc/environment
 
