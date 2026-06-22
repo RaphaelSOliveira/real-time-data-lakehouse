@@ -7,3 +7,13 @@ output "project_name" {
   description = "Project name"
   value       = var.project_name
 }
+
+output "s3_bucket_id" {
+  description = "Name of the S3 bucket"
+  value       = module.s3.bucket_id
+}
+
+output "s3_bucket_arn" {
+  description = "ARN of the S3 bucket"
+  value       = module.s3.bucket_arn
+}

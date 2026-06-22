@@ -54,3 +54,12 @@ module "ec2" {
   msk_bootstrap_servers = module.msk.bootstrap_brokers
   common_tags           = local.common_tags
 }
+
+module "s3" {
+  source = "./modules/s3"
+
+  project_name = var.project_name
+  environment  = var.environment
+  bucket_name  = "ridestream-production"
+  common_tags  = local.common_tags
+}
