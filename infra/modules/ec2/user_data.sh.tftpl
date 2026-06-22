@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Capture all user-data output for debugging on the instance.
+set -e
+exec > /var/log/user-data.log 2>&1
+
+# Install Java, Kafka CLI deps, and Python
+yum update -y
+yum install -y wget java-17-amazon-corretto-headless python3-pip
+
+KAFKA_VERSION="4.3.0"
+SCALA_VERSION="2.13"
+cd /opt
+wget -q https://downloads.apache.org/kafka/$${KAFKA_VERSION}/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION}.tgz
+tar -xzf /opt/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION}.tgz
+ln -s /opt/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION} /opt/kafka
+echo 'export PATH=$PATH:/opt/kafka/bin' >> /etc/profile.d/kafka.sh
+
+wget -q https://github.com/aws/aws-msk-iam-auth/releases/download/v2.3.7/aws-msk-iam-auth-2.3.7-all.jar \
+  -O /opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar
+
+# Create client.properties file for IAM authentication
+echo "security.protocol=SASL_SSL" > /opt/kafka/bin/client.properties
+echo "sasl.mechanism=AWS_MSK_IAM" >> /opt/kafka/bin/client.properties
+echo "sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;" >> /opt/kafka/bin/client.properties
+echo "sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler" >> /opt/kafka/bin/client.properties
+chown ec2-user:ec2-user /opt/kafka/bin/client.properties
+
+echo "export CLASSPATH=/opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar" >> /etc/profile.d/kafka.sh
+
+# Pin kafka-python: its SASL/OAuth API moved across versions
+# (kafka.net.sasl.oauth.AbstractTokenProvider.token), and the producer is
+# written against this version.
+pip install 'kafka-python==3.0.2' aws-msk-iam-sasl-signer-python
+
+/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic riskops_transaction --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${msk_bootstrap_servers}
+
+# Environment file consumed by the systemd service below
+cat > /etc/producer.env <<ENVEOF
+TOPIC_NAME=riskops_transaction
+KAFKA_BOOTSTRAP_SERVERS=${msk_bootstrap_servers}
+AWS_REGION=${aws_region}
+ENVEOF
+
+# Also expose env vars system-wide for interactive SSH sessions
+cat /etc/producer.env >> /etc/environment
+
+# Deploy the producer script. It is base64-encoded by Terraform so the Python
+# source survives shell/Terraform escaping intact.
+mkdir -p /opt/producer
+echo '${producer_b64}' | base64 -d > /opt/producer/producer.py
+chown -R ec2-user:ec2-user /opt/producer
+
+# Run the producer as a systemd service so it starts on boot and is restarted
+# automatically if it ever exits.
+cat > /etc/systemd/system/riskops-producer.service <<UNITEOF
+[Unit]
+Description=RiskOps Kafka producer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+EnvironmentFile=/etc/producer.env
+ExecStart=/usr/bin/python3 /opt/producer/producer.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNITEOF
+
+systemctl daemon-reload
+systemctl enable --now riskops-producer.service
+
+echo "user-data completed successfully"

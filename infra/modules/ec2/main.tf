@@ -71,49 +71,15 @@ resource "aws_instance" "kafka_client" {
     encrypted   = true
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    
-    # Configure logs to capture user-data output
-    set -e
-    exec > /var/log/user-data.log 2>&1
+  user_data = templatefile("${path.module}/user_data.sh.tftpl", {
+    msk_bootstrap_servers = var.msk_bootstrap_servers
+    aws_region            = data.aws_region.current.name
+    producer_b64          = base64encode(file("${path.module}/data_generation_kafka_producer.py"))
+  })
 
-    # Install Java, Kafka, and Python packages
-    yum update -y
-    yum install -y wget java-17-amazon-corretto-headless python3-pip
-
-    KAFKA_VERSION="4.3.0"
-    SCALA_VERSION="2.13"
-    cd /opt
-    wget -q https://downloads.apache.org/kafka/$${KAFKA_VERSION}/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION}.tgz
-    tar -xzf /opt/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION}.tgz
-    ln -s /opt/kafka_$${SCALA_VERSION}-$${KAFKA_VERSION} /opt/kafka
-    echo 'export PATH=$PATH:/opt/kafka/bin' >> /etc/profile.d/kafka.sh
-
-    wget -q https://github.com/aws/aws-msk-iam-auth/releases/download/v2.3.7/aws-msk-iam-auth-2.3.7-all.jar \
-      -O /opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar
-
-    # Create client.properties file for IAM authentication
-    echo "security.protocol=SASL_SSL" > /opt/kafka/bin/client.properties
-    echo "sasl.mechanism=AWS_MSK_IAM" >> /opt/kafka/bin/client.properties
-    echo "sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;" >> /opt/kafka/bin/client.properties
-    echo "sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler" >> /opt/kafka/bin/client.properties
-    chown ec2-user:ec2-user /opt/kafka/bin/client.properties
-
-    echo "export CLASSPATH=/opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar" >> /etc/profile.d/kafka.sh
-
-    pip install kafka-python aws-msk-iam-sasl-signer-python
-
-    /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic riskops_transaction --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${var.msk_bootstrap_servers}
-    
-    # Expose env vars system-wide so the Python producer can read them in later sessions
-    echo 'TOPIC_NAME=riskops_transaction' >> /etc/environment
-    echo 'KAFKA_BOOTSTRAP_SERVERS=${var.msk_bootstrap_servers}' >> /etc/environment
-    echo 'AWS_REGION=${data.aws_region.current.name}' >> /etc/environment
-
-    echo "user-data completed successfully"
-
-  EOF
+  # Re-provision the instance when the producer script changes (user_data only
+  # runs on first boot, so the script is baked in at launch time).
+  user_data_replace_on_change = true
 
   tags = merge(var.common_tags, {
     Name = "${local.prefix}-kafka-client"
