@@ -31,6 +31,7 @@ resource "aws_iam_role_policy" "ec2_msk" {
         "kafka-cluster:AlterCluster",
         "kafka-cluster:CreateTopic",
         "kafka-cluster:DescribeTopic",
+        "kafka-cluster:DescribeTopicDynamicConfiguration",
         "kafka-cluster:AlterTopic",
         "kafka-cluster:DeleteTopic",
         "kafka-cluster:ReadData",
