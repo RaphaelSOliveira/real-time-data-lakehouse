@@ -38,6 +38,11 @@ variable "msk_bootstrap_servers" {
   type        = string
 }
 
+variable "topic_name" {
+  description = "Kafka topic the producer creates and writes to"
+  type        = string
+}
+
 variable "common_tags" {
   type    = map(string)
   default = {}

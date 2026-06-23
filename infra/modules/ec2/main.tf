@@ -74,6 +74,7 @@ resource "aws_instance" "kafka_client" {
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
     msk_bootstrap_servers = var.msk_bootstrap_servers
     aws_region            = data.aws_region.current.name
+    topic_name            = var.topic_name
     producer_b64          = base64encode(file("${path.module}/data_generation_kafka_producer.py"))
   })
 

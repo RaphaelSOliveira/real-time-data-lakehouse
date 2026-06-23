@@ -33,11 +33,11 @@ echo "export CLASSPATH=/opt/kafka/libs/aws-msk-iam-auth-2.3.7-all.jar" >> /etc/p
 # written against this version.
 pip install 'kafka-python==3.0.2' aws-msk-iam-sasl-signer-python
 
-/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic riskops_transaction --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${msk_bootstrap_servers}
+/opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic ${topic_name} --command-config /opt/kafka/bin/client.properties --partitions 1 --bootstrap-server ${msk_bootstrap_servers}
 
 # Environment file consumed by the systemd service below
 cat > /etc/producer.env <<ENVEOF
-TOPIC_NAME=riskops_transaction
+TOPIC_NAME=${topic_name}
 KAFKA_BOOTSTRAP_SERVERS=${msk_bootstrap_servers}
 AWS_REGION=${aws_region}
 ENVEOF

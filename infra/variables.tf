@@ -21,6 +21,12 @@ variable "environment" {
   type        = string
 }
 
+variable "topic_name" {
+  description = "Kafka topic carrying the RiskOps transaction events (shared by the producer and Firehose)"
+  type        = string
+  default     = "riskops_transaction"
+}
+
 variable "availability_zones" {
   description = "Availability zones for subnet placement (at least 2 required for MSK)"
   type        = list(string)
