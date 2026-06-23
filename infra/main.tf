@@ -64,3 +64,14 @@ module "s3" {
   bucket_name  = "transaction-riskops-lakehouse"
   common_tags  = local.common_tags
 }
+
+module "firehose" {
+  source = "./modules/firehose"
+
+  project_name    = var.project_name
+  environment     = var.environment
+  msk_cluster_arn = module.msk.cluster_arn
+  topic_name      = var.topic_name
+  s3_bucket_arn   = module.s3.bucket_arn
+  common_tags     = local.common_tags
+}
