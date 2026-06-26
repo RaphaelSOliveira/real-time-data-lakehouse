@@ -75,3 +75,14 @@ module "firehose" {
   s3_bucket_arn   = module.s3.bucket_arn
   common_tags     = local.common_tags
 }
+
+module "glue" {
+  source = "./modules/glue"
+
+  project_name = var.project_name
+  environment  = var.environment
+  bucket_name  = module.s3.bucket_id
+  bucket_arn   = module.s3.bucket_arn
+  topic_name   = var.topic_name
+  common_tags  = local.common_tags
+}
